@@ -1,6 +1,7 @@
 use fnv::FnvHashMap;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::demo::gamevent::GameEventDefinition;
 
@@ -268,7 +269,7 @@ impl<'a> ParserState {
                                     }
                                     _ => entity.into(),
                                 };
-                            self.instance_baselines[new_index].set(updated_baseline);
+                            self.instance_baselines[new_index].set(Rc::new(updated_baseline));
                         }
                     }
                 }
@@ -305,7 +306,7 @@ impl<'a> ParserState {
 
 #[derive(Clone)]
 pub struct Baseline {
-    instances: Vec<Option<BaselineEntity>>,
+    instances: Vec<Option<Rc<BaselineEntity>>>,
 }
 
 impl Default for Baseline {
@@ -320,10 +321,10 @@ impl Baseline {
     pub fn get(&self, index: EntityId) -> Option<&BaselineEntity> {
         self.instances
             .get(usize::from(index))
-            .and_then(|opt| opt.as_ref())
+            .and_then(|opt| opt.as_ref().map(|opt| opt.as_ref()))
     }
 
-    fn set(&mut self, entity: BaselineEntity) {
+    fn set(&mut self, entity: Rc<BaselineEntity>) {
         let index = entity.entity_id;
         self.instances[usize::from(index)] = Some(entity);
     }
@@ -332,12 +333,6 @@ impl Baseline {
         self.instances
             .iter()
             .filter_map(|entity| entity.as_ref().map(|entity| entity.entity_id))
-    }
-
-    pub fn into_values(self) -> impl Iterator<Item = PacketEntity> {
-        self.instances
-            .into_iter()
-            .filter_map(|entity| entity.map(|entity| entity.into()))
     }
 
     pub fn contains(&self, index: EntityId) -> bool {

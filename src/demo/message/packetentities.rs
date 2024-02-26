@@ -119,6 +119,27 @@ impl PacketEntity {
         index: &SendPropIdentifier,
         parser_state: &ParserState,
     ) -> Option<SendProp> {
+        if self.update_type != UpdateType::Enter {
+            return self
+                .props
+                .iter()
+                .find(|prop| prop.identifier == *index)
+                .cloned();
+        } else {
+            // if self.update_type == UpdateType::Enter
+            return self
+                .props
+                .iter()
+                .find(|prop| prop.identifier == *index)
+                .cloned()
+                .or_else(|| {
+                    self.get_baseline_props(parser_state)
+                        .iter()
+                        .find(|prop| prop.identifier == *index)
+                        .cloned()
+                });
+        }
+
         self.props(parser_state)
             .find(|prop| prop.identifier == *index)
     }
@@ -174,6 +195,43 @@ impl PacketEntity {
         } else {
             Either::Right(self.props.iter().cloned())
         }
+    }
+
+    #[inline(never)]
+    pub fn visit_props<'a>(
+        &'a self,
+        parser_state: &'a ParserState,
+        f: fn(&SendPropIdentifier) -> bool,
+    ) -> impl Iterator<Item = SendProp> + 'a {
+        if self.update_type == UpdateType::Enter {
+            //             println!("enter");
+            let mut found_props = HashSet::<SendPropIdentifier>::new();
+            let props = self.props.iter().cloned();
+            #[allow(clippy::unnecessary_to_owned)]
+            let baseline_props = self
+                .get_baseline_props(parser_state)
+                .into_owned()
+                .into_iter();
+            Either::Left(props.chain(baseline_props).filter(move |prop| {
+                if !f(&prop.identifier) {
+                    return false;
+                }
+                let found = found_props.contains(&prop.identifier);
+                found_props.insert(prop.identifier);
+                !found
+            }))
+        } else {
+            //             println!("cloned");
+            Either::Right(self.props.iter().cloned())
+        }
+    }
+
+    #[inline(never)]
+    pub fn visit_props2<'a>(
+        &'a self,
+        parser_state: &'a ParserState,
+    ) -> impl Iterator<Item = &SendProp> + 'a {
+        self.props.iter()
     }
 }
 
