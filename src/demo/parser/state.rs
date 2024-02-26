@@ -1,6 +1,7 @@
 use fnv::FnvHashMap;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::demo::gamevent::GameEventDefinition;
 
@@ -350,12 +351,6 @@ impl Baseline {
         self.instances
             .iter()
             .filter_map(|entity| entity.as_ref().map(|entity| entity.entity_id))
-    }
-
-    pub fn into_values(self) -> impl Iterator<Item = PacketEntity> {
-        self.instances
-            .into_iter()
-            .filter_map(|entity| entity.map(|entity| entity.into()))
     }
 
     pub fn contains(&self, index: EntityId) -> bool {
