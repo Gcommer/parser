@@ -243,6 +243,18 @@ impl<E: Endianness> BitWrite<E> for UserId {
     }
 }
 
+impl From<usize> for UserId {
+    fn from(int: usize) -> Self {
+        UserId(int as u16)
+    }
+}
+
+impl From<UserId> for usize {
+    fn from(id: UserId) -> Self {
+        id.0 as usize
+    }
+}
+
 impl From<u32> for UserId {
     fn from(int: u32) -> Self {
         UserId(int as u16)
