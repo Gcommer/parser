@@ -55,10 +55,10 @@ pub enum UserMessageType {
     BreakModelPumpkin = 42,
     BreakModelRocketDud = 43,
     CallVoteFailed = 44,
-    VoteStart = 45,
-    VotePass = 46,
-    VoteFailed = 47,
-    VoteSetup = 48,
+    VotePass = 45,
+    VoteStart = 46,
+    VoteEnd = 47,
+    VoteFailed = 48,
     PlayerBonusPoints = 49,
     SpawnFlyingBird = 50,
     PlayerGodRayEffect = 51,
@@ -92,6 +92,9 @@ pub enum UserMessage<'a> {
     Rumble(RumbleMessage),
     Fade(FadeMessage),
     HapMeleeContact(HapMeleeContactMessage),
+    VoteStart(VoteStartMessage),
+    VoteEnd(VoteEndMessage),
+    VoteFailed(VoteFailedMessage),
     Unknown(UnknownUserMessage<'a>),
 }
 
@@ -108,6 +111,9 @@ impl UserMessage<'_> {
             UserMessage::Rumble(_) => UserMessageType::Rumble as u8,
             UserMessage::Fade(_) => UserMessageType::Fade as u8,
             UserMessage::HapMeleeContact(_) => UserMessageType::HapMeleeContact as u8,
+            UserMessage::VoteStart(_) => UserMessageType::VoteStart as u8,
+            UserMessage::VoteEnd(_) => UserMessageType::VoteEnd as u8,
+            UserMessage::VoteFailed(_) => UserMessageType::VoteFailed as u8,
             UserMessage::Unknown(msg) => msg.raw_type,
         }
     }
@@ -130,6 +136,9 @@ impl<'a> BitRead<'a, LittleEndian> for UserMessage<'a> {
                     UserMessageType::Rumble => UserMessage::Rumble(data.read()?),
                     UserMessageType::Fade => UserMessage::Fade(data.read()?),
                     UserMessageType::HapMeleeContact => UserMessage::HapMeleeContact(data.read()?),
+                    UserMessageType::VoteStart => UserMessage::VoteStart(data.read()?),
+                    UserMessageType::VoteEnd => UserMessage::VoteEnd(data.read()?),
+                    UserMessageType::VoteFailed => UserMessage::VoteFailed(data.read()?),
                     _ => UserMessage::Unknown(UnknownUserMessage {
                         raw_type: message_type as u8,
                         data,
@@ -171,6 +180,10 @@ impl<'a> BitWrite<LittleEndian> for UserMessage<'a> {
             UserMessage::Rumble(body) => stream.write(body),
             UserMessage::Fade(body) => stream.write(body),
             UserMessage::HapMeleeContact(body) => stream.write(body),
+            UserMessage::VoteStart(body) => stream.write(body),
+            UserMessage::VoteEnd(body) => stream.write(body),
+            //             UserMessage::VotePass(body) => stream.write(body),
+            UserMessage::VoteFailed(body) => stream.write(body),
             UserMessage::Unknown(body) => stream.write(&body.data),
         })?;
 
@@ -452,6 +465,50 @@ pub struct FadeMessage {
 #[derive(BitRead, BitWrite, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HapMeleeContactMessage {
     pub data: u8,
+}
+
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(BitRead, BitWrite, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VoteStartMessage {
+    pub team: u8,
+    pub voteidx: u32,
+    pub caller: u8,
+    pub title: MaybeUtf8String,
+    pub description: MaybeUtf8String,
+    pub target_entity: u8,
+}
+
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(BitRead, BitWrite, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VoteEndMessage {
+    pub team: u8,
+    pub voteidx: u32,
+    pub unknown: u8,
+    pub title: MaybeUtf8String,
+    pub description: MaybeUtf8String,
+}
+
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(BitRead, BitWrite, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VotePassMessage {
+    pub team: u8,
+    pub title: MaybeUtf8String,
+    pub description: MaybeUtf8String,
+}
+
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(BitRead, BitWrite, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VoteFailedMessage2 {
+    pub reason: u8,
+    pub time: u16,
+}
+
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(BitRead, BitWrite, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VoteFailedMessage {
+    pub team: u8,
+    pub voteidx: u32,
+    pub reason: u8,
 }
 
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
