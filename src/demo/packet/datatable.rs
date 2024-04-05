@@ -34,6 +34,12 @@ use std::ops::Deref;
 )]
 pub struct ClassId(u16);
 
+impl ClassId {
+    pub const fn new(raw: u16) -> Self {
+        ClassId(raw)
+    }
+}
+
 impl From<u16> for ClassId {
     fn from(int: u16) -> Self {
         ClassId(int)
