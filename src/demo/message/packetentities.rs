@@ -164,7 +164,7 @@ impl fmt::Display for PacketEntity {
 }
 
 impl PacketEntity {
-    fn mut_prop_by_identifier(&mut self, index: &SendPropIdentifier) -> Option<&mut SendProp> {
+    pub fn mut_prop_by_identifier(&mut self, index: &SendPropIdentifier) -> Option<&mut SendProp> {
         self.props.iter_mut().find(|prop| prop.identifier == *index)
     }
 
